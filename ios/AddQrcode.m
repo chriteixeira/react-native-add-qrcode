@@ -4,16 +4,72 @@
 
 RCT_EXPORT_MODULE()
 
-// Example method
-// See // https://facebook.github.io/react-native/docs/native-modules-ios
-RCT_REMAP_METHOD(multiply,
-                 multiplyWithA:(nonnull NSNumber*)a withB:(nonnull NSNumber*)b
-                 withResolver:(RCTPromiseResolveBlock)resolve
-                 withRejecter:(RCTPromiseRejectBlock)reject)
-{
-  NSNumber *result = @([a floatValue] * [b floatValue]);
+- (CGImageRef) generateQRCode:(NSString *)data
+                    withWidth:(CGFloat)width
+                   withHeight:(CGFloat)height
+                    withColor:(UIColor *)color
+          withBackgroundColor:(UIColor *)backgroundColor {
+    
+    NSData *stringData = [data dataUsingEncoding: NSUTF8StringEncoding];
+    CIFilter *qrFilter = [CIFilter filterWithName:@"CIQRCodeGenerator"];
+    CIFilter *colorFilter = [CIFilter filterWithName:@"CIFalseColor"];
+    [qrFilter setValue:stringData forKey:@"inputMessage"];
+    CIImage *qrImage = qrFilter.outputImage;
+    
+    CIColor *background = [[CIColor alloc] initWithColor:backgroundColor];
+    CIColor *foreground = [[CIColor alloc] initWithColor:color];
 
-  resolve(result);
+    [colorFilter setValue:qrFilter.outputImage forKey:kCIInputImageKey];
+    [colorFilter setValue:background forKey:@"inputColor1"];
+    [colorFilter setValue:foreground forKey:@"inputColor0"];
+    
+    float scaleX = 1;
+    float scaleY = 1;
+    if (height) {
+      scaleY = 500 / qrImage.extent.size.height;
+    }
+    if (width) {
+      scaleX = 500 / qrImage.extent.size.width;
+    }
+    qrImage = [qrImage imageByApplyingTransform:CGAffineTransformMakeScale(scaleX, scaleY)];
+    CIContext *context = [CIContext contextWithOptions:nil];
+    return [context createCGImage:qrImage fromRect:[qrImage extent]];
+    
+}
+
+RCT_EXPORT_METHOD(addQRCodeToImage:(NSString *)imagePath
+                  data:(NSString *)data
+                  destinationPath:(NSString *)destinationPath
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+       
+    NSURL *imageURL = [RCTConvert NSURL:imagePath];
+    NSData *imageData = [[NSData alloc] initWithContentsOfURL:imageURL];
+    UIImage *image = [[UIImage alloc] initWithData:imageData];
+    
+    CGFloat width = image.size.width;
+    CGFloat height = image.size.height;
+    
+    CGContextRef ctx = CGBitmapContextCreate(nil, width, height, CGImageGetBitsPerComponent(image.CGImage), 0, CGImageGetColorSpace(image.CGImage), kCGImageAlphaPremultipliedLast);
+    
+    CGContextDrawImage(ctx, CGRectMake(0, 0, width, height), image.CGImage);
+
+    CGImageRef qrCGImage = [self generateQRCode:data withWidth:100 withHeight:100];
+    CGContextDrawImage(ctx, CGRectMake(20, 20, 300, 300), qrCGImage);
+        
+    CGImageRef cgImage = CGBitmapContextCreateImage(ctx);
+    CGContextRelease(ctx);
+    
+    NSData* resultImageData = [NSData dataWithData:UIImageJPEGRepresentation([UIImage imageWithCGImage:cgImage], 80)];
+    NSError *writeError = nil;
+    [resultImageData writeToFile:destinationPath options:NSDataWritingAtomic error:&writeError];
+        
+    resolve(@{
+        @"uri":destinationPath,
+        @"finalWidth":[NSNumber numberWithFloat:width],
+        @"finalHeight":[NSNumber numberWithFloat:height]
+        });
 }
 
 @end
