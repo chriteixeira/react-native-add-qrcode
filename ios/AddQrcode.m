@@ -1,7 +1,8 @@
 #import "AddQrcode.h"
+#import "React/RCTConvert.h"
 
 @implementation AddQrcode
-
+		
 RCT_EXPORT_MODULE()
 
 - (CGImageRef) generateQRCode:(NSString *)data
@@ -14,7 +15,6 @@ RCT_EXPORT_MODULE()
     CIFilter *qrFilter = [CIFilter filterWithName:@"CIQRCodeGenerator"];
     CIFilter *colorFilter = [CIFilter filterWithName:@"CIFalseColor"];
     [qrFilter setValue:stringData forKey:@"inputMessage"];
-    CIImage *qrImage = qrFilter.outputImage;
     
     CIColor *background = [[CIColor alloc] initWithColor:backgroundColor];
     CIColor *foreground = [[CIColor alloc] initWithColor:color];
@@ -22,14 +22,15 @@ RCT_EXPORT_MODULE()
     [colorFilter setValue:qrFilter.outputImage forKey:kCIInputImageKey];
     [colorFilter setValue:background forKey:@"inputColor1"];
     [colorFilter setValue:foreground forKey:@"inputColor0"];
+    CIImage *qrImage = colorFilter.outputImage;
     
     float scaleX = 1;
     float scaleY = 1;
     if (height) {
-      scaleY = 500 / qrImage.extent.size.height;
+      scaleY = height / qrImage.extent.size.height;
     }
     if (width) {
-      scaleX = 500 / qrImage.extent.size.width;
+      scaleX = width / qrImage.extent.size.width;
     }
     qrImage = [qrImage imageByApplyingTransform:CGAffineTransformMakeScale(scaleX, scaleY)];
     CIContext *context = [CIContext contextWithOptions:nil];
@@ -38,11 +39,19 @@ RCT_EXPORT_MODULE()
 }
 
 RCT_EXPORT_METHOD(addQRCodeToImage:(NSString *)imagePath
-                  data:(NSString *)data
                   destinationPath:(NSString *)destinationPath
+                  data:(NSString *)data
+                  options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
+
+    CGFloat qrX = [RCTConvert CGFloat:options[@"x"]];
+    CGFloat qrY = [RCTConvert CGFloat:options[@"x"]];
+    CGFloat qrWidth = [RCTConvert CGFloat:options[@"width"]];
+    CGFloat qrHeight = [RCTConvert CGFloat:options[@"height"]];
+    UIColor *backgroundColor = [RCTConvert UIColor:options[@"backgroundColor"]];
+    UIColor *foregroundColor = [RCTConvert UIColor:options[@"foregroundColor"]];
        
     NSURL *imageURL = [RCTConvert NSURL:imagePath];
     NSData *imageData = [[NSData alloc] initWithContentsOfURL:imageURL];
@@ -55,8 +64,12 @@ RCT_EXPORT_METHOD(addQRCodeToImage:(NSString *)imagePath
     
     CGContextDrawImage(ctx, CGRectMake(0, 0, width, height), image.CGImage);
 
-    CGImageRef qrCGImage = [self generateQRCode:data withWidth:100 withHeight:100];
-    CGContextDrawImage(ctx, CGRectMake(20, 20, 300, 300), qrCGImage);
+    CGImageRef qrCGImage = [self generateQRCode:data 
+                            withWidth:qrWidth 
+                            withHeight:qrHeight
+                            withColor:foregroundColor
+                            withBackgroundColor:backgroundColor];
+    CGContextDrawImage(ctx, CGRectMake(qrX, qrY, qrWidth, qrHeight), qrCGImage);
         
     CGImageRef cgImage = CGBitmapContextCreateImage(ctx);
     CGContextRelease(ctx);
