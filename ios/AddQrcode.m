@@ -47,9 +47,10 @@ RCT_EXPORT_METHOD(addQRCodeToImage:(NSString *)imagePath
 {
 
     CGFloat qrX = [RCTConvert CGFloat:options[@"x"]];
-    CGFloat qrY = [RCTConvert CGFloat:options[@"x"]];
+    CGFloat qrY = [RCTConvert CGFloat:options[@"y"]];
     CGFloat qrWidth = [RCTConvert CGFloat:options[@"width"]];
     CGFloat qrHeight = [RCTConvert CGFloat:options[@"height"]];
+    CGFloat quality = [RCTConvert CGFloat:options[@"quality"]];
     UIColor *backgroundColor = [RCTConvert UIColor:options[@"backgroundColor"]];
     UIColor *foregroundColor = [RCTConvert UIColor:options[@"foregroundColor"]];
        
@@ -74,7 +75,7 @@ RCT_EXPORT_METHOD(addQRCodeToImage:(NSString *)imagePath
     CGImageRef cgImage = CGBitmapContextCreateImage(ctx);
     CGContextRelease(ctx);
     
-    NSData* resultImageData = [NSData dataWithData:UIImageJPEGRepresentation([UIImage imageWithCGImage:cgImage], 80)];
+    NSData* resultImageData = [NSData dataWithData:UIImageJPEGRepresentation([UIImage imageWithCGImage:cgImage], quality)];
     NSError *writeError = nil;
     [resultImageData writeToFile:destinationPath options:NSDataWritingAtomic error:&writeError];
         

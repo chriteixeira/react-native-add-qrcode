@@ -1,6 +1,6 @@
 {
   "name": "react-native-add-qrcode",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Add a QRCode to an image",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",

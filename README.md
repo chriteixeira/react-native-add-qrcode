@@ -42,6 +42,7 @@ type OptionsType = {
   y?: number;                   // Vertical position of the QR Code
   height?: number;              // Height of the QR Code
   width?: number;               // Width of the QR Code
+  quality?: number;             // JPEG quality for the final image
   backgroundColor?: string;     // Color for the background of the QR Code
   foregroundColor?: string;     // Color for the foreground of the QR Code
 }

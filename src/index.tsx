@@ -7,6 +7,7 @@ type AddQRCodeToImageOptions = {
   y?: number;
   height?: number;
   width?: number;
+  quality?: number;
   backgroundColor?: string;
   foregroundColor?: string;
 };
@@ -44,6 +45,7 @@ export function addQRCodeToImage(
       y: opts.y || 0,
       height: opts.height || 250,
       width: opts.width || 250,
+      quality: opts.quality || 1.0,
       backgroundColor: processColor(opts.backgroundColor || '#FFFFFF'),
       foregroundColor: processColor(opts.foregroundColor || '#000000'),
     }
